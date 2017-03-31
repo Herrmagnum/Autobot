@@ -1,0 +1,25 @@
+// Test kod för tracking sensor
+// Testade samma kod med avoid sensor och den funkar utmärk
+
+
+const int sensor=8; //sensor i pin 8
+const int ledpin=13;  // test led
+int val;
+
+void setup() {
+ Serial.begin(9600);
+ Serial.print("Line follower sensor: /n");
+ pinMode(sensor,INPUT);
+ pinMode(ledpin,OUTPUT);
+}
+
+void loop() {
+  val = digitalRead(sensor);   //läser av värdet på sensoren  1 eller 0 
+  Serial.println(val);
+  if(val==HIGH){  // Ger 1 om den detecterar svart linjä
+    digitalWrite(ledpin,LOW);   //led av
+    }
+  else {  //  Ger 0 när den inte är på linje
+  digitalWrite(ledpin,HIGH);  // led på 
+  } 
+}
