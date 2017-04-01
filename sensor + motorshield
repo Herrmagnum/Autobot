@@ -1,0 +1,54 @@
+///////////////// motor på höger sida/////////////
+int enA = 10; //kontrollerar hastigheten i höger motor 0-255
+int in1 = 9;
+int in2 = 8;
+//////////////// motor på vänster sida////////////
+int enB = 5;  //kontrollerar hastigheter i vänter motor 0-255
+int in3 = 6;
+int in4 = 7;
+///////////////sensor_tracking/////////////////
+
+int sensor=12;  //sensor sitteri pin 12
+int val;       // Här spara vi om motor är på 1 eller 0
+void setup()
+{
+  Serial.begin(9600);   
+  Serial.print("Sensor värde: ");
+///////////////// Här identiferar vi vilka sensorer som är output eller input ////////////////////
+  pinMode(enA, OUTPUT);
+  pinMode(enB, OUTPUT);
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+  pinMode(sensor, INPUT);
+}
+void loop (){
+val = digitalRead(sensor);  //// Vi läser om sensorer är på linje 0 eller utanför linje 1
+
+///////  om sensor är på linje sätts båda motorer på med max fart 
+if(val == LOW){
+  Serial.print(val);
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, HIGH);  
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH); 
+  // accelerate from zero to maximum speed
+    analogWrite(enA, 255);
+    analogWrite(enB, 255);
+}
+
+///////// om sensor inte är på linje stängs båda motorer av
+ else(val == HIGH); { 
+  Serial.print(val);
+  for (int i = 255; i >= 0; --i)
+  {
+    analogWrite(enA, i);
+    analogWrite(enB, i); 
+  } 
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);  
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);  
+ } 
+}
