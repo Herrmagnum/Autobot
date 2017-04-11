@@ -1,0 +1,57 @@
+//&&&&&&&&&&  AUTOBOTS  &&&&&&&&&&&//
+//Master  I2C synchronous serial protocol.  SDA = Här send data   SLC = The clock ??
+//I denna program kommunicerar sig två microkontrolers med varandra med hjälp av I2C 
+//kommunication. 
+//Sensorerna är kopplade till "Master" arduino som sedan skickar iväg data till en "Slave" 
+//arduino som få ett servo motor samt ett dc motor att snurra.
+
+#include <Wire.h>                   //bibliotek för anslutning mellan två arduino via A5=SLC  A4=SDA
+
+void setup() 
+{
+  Serial.begin(9600);               //startar anslutning med dator
+  Serial.println("Servo vinklar");  //Skriver en text i Serial monitor
+  Wire.begin();                     //bits band, tror det är 9600 om man inte skriver någonting                  
+}
+void loop() 
+{
+  while(Serial.available())          // Ett viss uppdrag görs när ett viss kommando skicka vid serial monitor
+  {
+  int c = Serial.read();             // Den givna kommando som angetts i Serial monitor sparas i variabel c som är av typ chart  
+    if(c ==  '1')            
+    {    
+      Serial.println();             //Vinkel på servo motor skrivs ut
+      Wire.beginTransmission(2);    //Master gör anslutning med Slave som har namn 2. 
+      Wire.write('1');              //om kommando som angetts i Serial monitor är 1 sä skickas denna kommando vidare till Slave arduino
+      Wire.endTransmission();
+    }
+      if(c ==  '2')            
+    {    
+      Serial.println();
+      Wire.beginTransmission(2);     
+      Wire.write('2');             
+      Wire.endTransmission();
+    }
+      if(c ==  '3')            
+    {    
+      Serial.println();
+      Wire.beginTransmission(2);    
+      Wire.write('3');            
+      Wire.endTransmission(); 
+    }
+      if(c ==  '4')            
+    {    
+      Serial.println();
+      Wire.beginTransmission(2);    
+      Wire.write('4');            
+      Wire.endTransmission(); 
+    }     
+    else if(c == '5')
+    {
+      Serial.println();
+      Wire.beginTransmission(2);
+      Wire.write('5');            
+      Wire.endTransmission();
+    }
+  }
+}
