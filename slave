@@ -1,0 +1,94 @@
+//&&&&&&&&&&  AUTOBOTS  &&&&&&&&&&&//
+//Denna program innehåller all kod som Slave arduino behöver för att kunna ta emot data 
+//från The Master.
+
+#include <Servo.h>           //Bibliotek för servo motor
+#include <Wire.h>            //bibliotek för anslutning mellan två arduino via A5=SLC  A4=SDA
+Servo servo2;
+Servo servo1;
+Servo Dc;
+
+// Olika bestämda vinklar för servo motor
+// Höger
+int angle1 = 140;
+int angle2 = 110;
+// mitten läge
+int angle3 = 95;
+//Vänster
+int angle4 = 90;
+int angle5 = 80;
+
+int dcmotor = 9;                //Servo motor är ansluten till pin 9
+
+void setup()
+{   
+  Wire.begin(2);                //"Namnet på slave"
+  Wire.onReceive(servo_test);   //registrerar ett händelse
+  
+  pinMode(13,OUTPUT);
+  pinMode(12,OUTPUT); 
+  pinMode(dcmotor,OUTPUT);      //sätter dc motor som output
+  
+  Dc.attach(dcmotor);           //kopplat Dc till pin 9
+  servo1.attach(13);            //kopplat främre servo till pin 13
+  servo2.attach(12);            //kopplat främre servo till pin 12
+  
+  Dc.writeMicroseconds(2000);   //Sätter start läge för Dc motor. frammåt 
+}
+
+void loop() //Denna ska vara tömt eftersom denna arduino bara tar emot data.
+{
+}
+
+void servo_test(int howMany)  //Denna är funktionen som ska sättas igång när den ta emor data
+{
+  while(Wire.available()) 
+  {
+    char c = Wire.read();   //I denna variabel sparas den deta som har skickas från Serial monitor i Master arduino.
+   // Här är de givna olika uppdrag som Slave ska göra när den få ett viss uppdrag. 
+                            
+      if(c == '1')
+      {      
+       servo1.write(angle1);        
+       servo2.write(angle1);
+       Dc.writeMicroseconds(2000);
+       digitalWrite(dcmotor,HIGH);
+       delay(5000);
+       
+      }
+      if(c == '2') 
+      {      
+       servo1.write(angle2);
+       servo2.write(angle2);
+       Dc.writeMicroseconds(2000);
+       delay(5000);
+       
+      }
+      if(c == '3')
+      {      
+       servo1.write(angle3);
+       servo2.write(angle3);
+       Dc.writeMicroseconds(1500);
+       delay(5000);
+      
+      }
+      if(c == '4')
+      {      
+       servo1.write(angle4);
+       servo2.write(angle4);
+       Dc.writeMicroseconds(500);
+       delay(5000);
+       
+      }
+      else if(c == '5')
+      {
+       servo1.write(angle5);
+       servo2.write(angle5);
+       Dc.writeMicroseconds(1500);
+       delay(5000);
+       
+     }
+   }
+}     
+    
+
