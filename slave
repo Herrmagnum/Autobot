@@ -18,6 +18,15 @@ int angle3 = 95;
 int angle4 = 90;
 int angle5 = 80;
 
+// Motor vinkar för att bestämma hastighet
+//under 90 verkar vara frammåt. 80sakta fram
+//140 går skitfort bakåt
+//110 lagom fort bakåt
+
+int Tomgang=90 ; /då står den stilla.
+
+
+
 int dcmotor = 9;                //Servo motor är ansluten till pin 9
 
 void setup()
