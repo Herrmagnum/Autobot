@@ -1,0 +1,36 @@
+# include <Servo.h>
+Servo FrontStering;
+Servo motor;
+
+int Myservo = 13;
+int Mymotor = 12;
+
+void setup()
+{
+ 
+  pinMode(Myservo,OUTPUT);            //sätter främre servo motor som output
+  pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
+  
+  FrontStering.attach(Myservo);       //kopplat Dc till pin 9
+  motor.attach(Mymotor);             //kopplat främre servo till pin 13
+  
+
+}
+
+void loop() {
+  
+  
+}
+
+void SetSteering(float angle)
+{
+
+Myservo.write(angle);
+  
+}
+
+void SetSpeed(float mps)
+{
+Mymotor.write(mps);
+ 
+}
