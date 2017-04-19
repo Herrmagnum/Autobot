@@ -1,0 +1,109 @@
+# include <Servo.h>
+#include <PID_v1.h>
+
+int HALL=2;                               //pin för hall
+int state=HIGH;                              //signal från hall
+int oldstate=HIGH;
+double v=0;                               //Hastighet cm/s
+double vold=0;
+double Omkrets=20.4;                         //Omkrets på hjulet cm
+int passeringar;
+unsigned long lasttime=0; 
+unsigned long currenttime=0;
+unsigned long lastangletime=0;
+double Input;
+Servo motor;
+int Mymotor = 12;
+float angle = 90;
+double Output;
+float inputintervall = 2000;
+
+
+//Define Variables we'll be connecting to
+double Setpoint;
+
+//Define the aggressive and conservative Tuning Parameters
+double aggKp=1.37e-6, aggKi=0.000137, aggKd=0;
+double consKp=1.37e-6, consKi=0.000137, consKd=0;
+
+//Specify the links and initial tuning parameters
+PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
+
+void setup() 
+{
+    pinMode(HALL, INPUT);
+    Serial.begin(9600); 
+    pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
+    
+    motor.attach(Mymotor); 
+    motor.write(angle);  
+    passeringar=0;
+    Input = 0;
+    Setpoint = 100;
+
+  //turn the PID on
+  myPID.SetMode(AUTOMATIC);
+  
+}
+
+void loop() {
+
+
+//  if((currenttime-lastangletime) > inputintervall) {
+//  angle=random(103.3, 108);
+// //angle=104.5;
+//  motor.write(angle);
+//  lastangletime=currenttime;
+//}
+   
+
+    state=digitalRead(HALL);              //Reads the hallsignal
+
+    if (state==LOW && oldstate==HIGH)   //Cheaks if the magnet is there
+    {                      
+      currenttime=micros();
+      if (currenttime==0){
+      }
+      else{
+        v=(2*Omkrets*1000000)/((currenttime-lasttime)*17.53);    //multiply with tousend to get seconds instead of mS 17.53 magnets per wheel rotation
+        lasttime=currenttime;    
+        passeringar++;
+
+        if(v < 0.6*vold){
+          v=vold;
+        }
+        
+//            Serial.print(v);                      //Only for testing
+////    Serial.print("_____");                //Only for testing
+////    Serial.print(passeringar);                  //Only for testing
+//    //Serial.print('\n');                   //Only for testing
+//     Serial.print(',');
+//      Serial.print(currenttime);
+//      Serial.print(',');
+//      Serial.print(angle);
+//  //    Serial.print(',');
+//        Serial.print('\n');
+        vold=v;
+      }
+    }
+
+    oldstate=state;
+
+if((currenttime-lastangletime) > inputintervall){   
+  Input = v;
+   double gap = abs(Setpoint-Input); //distance away from setpoint
+    if (gap < 10)
+    {  //we're close to setpoint, use conservative tuning parameters
+      myPID.SetTunings(consKp, consKi, consKd);
+    }
+    else
+    {
+       //we're far from setpoint, use aggressive tuning parameters
+       myPID.SetTunings(aggKp, aggKi, aggKd);
+    }
+    angle=Output;
+    myPID.Compute();
+    motor.write(angle);
+   //delayMicroseconds(ts);
+   lastangletime=currenttime;
+  }
