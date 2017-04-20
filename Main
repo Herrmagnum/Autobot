@@ -1,6 +1,11 @@
 # include <Servo.h>
 Servo FrontStering;
 Servo motor;
+// TIMERS
+unsigned long lasttime=0; 
+unsigned long currenttime=0;
+unsigned long lastangletime=0;
+unsigned long inputintervall=220000;      //Microsekunder mellan PID beräkningar
 
 int Myservo = 13;
 int Mymotor = 12;
@@ -33,4 +38,15 @@ void SetSpeed(float mps)
 {
 Mymotor.write(mps);
  
+}
+
+void PIcontroler(){
+    double Sampletime=0.2;
+    double P=0.00856;
+    double I=0.0856;
+
+    integral=integral+(Setpoint-v)*Sampletime; //Updaterar integralen med antagandet att sampletiden är konstant
+    angle=90+P*(Setpoint-v)+integral*I;        //Beräknar vinkeln, regulatorn går från 90.
+    motor.write(angle);
+    lastangletime=currenttime;                 //lastangletime är tiden då vinkeln till motorn senast ändrats
 }
