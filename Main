@@ -7,6 +7,16 @@ unsigned long currenttime=0;
 unsigned long lastangletime=0;
 unsigned long inputintervall=220000;      //Microsekunder mellan PID beräkningar
 
+
+long integral =0;
+int state=HIGH;                              //signal från hall
+int oldstate=HIGH;
+double v=0;                               //Hastighet cm/s
+double vold=0;
+double Omkrets=20.4;                         //Omkrets på hjulet 
+double Setpoint;
+
+
 int Myservo = 13;
 int Mymotor = 12;
 
@@ -18,7 +28,11 @@ void setup()
   
   FrontStering.attach(Myservo);       //kopplat Dc till pin 9
   motor.attach(Mymotor);             //kopplat främre servo till pin 13
+  Setpoint = 140;
   
+  
+  
+  // KAN BEHÖVAS EN UPPSTARTS SEKVENS FÖR REGULATORERNA
 
 }
 
