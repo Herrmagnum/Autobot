@@ -2,35 +2,119 @@
 Servo FrontStering;
 Servo motor;
 
-int Myservo = 13;
-int Mymotor = 12;
+// TIMERS
+unsigned long lastSampletime=0; 
+int Ts= 200;                         //Microsecond between the samplings of velocity
+unsigned long currenttime=0;
+unsigned long lastPIDtime=0;
+int inputintervall=220000;           //Microsekunder mellan PID beräkningar
+
+
+//Hastighetsmätningen
+int HALL=2;                               //pin för hall
+int state=HIGH;                              //signal från hall
+int oldstate=HIGH;
+double v=0;                               //Hastighet cm/s
+double vold=0;
+double Omkrets=20.4;                         //Omkrets på hjulet 
+
+//CrouseControll Parametrar
+double Setpoint;
+double oldError=0;          //Gamla felet i hastighet regulatorn
+long integral =0;
+
+
+//Styrpinnar
+int Myservo = 7;
+int Mymotor = 6;
+
+//SensorArray
+int sensor8,sensor9,sensor10,sensor11,sensor12,sensor13;
+int val1, val2, val3, val4, val5, val6;
 
 void setup()
 {
- 
+  for(int i=sensor8; i<=sensor13; i++)
+  {
+     pinMode(i,INPUT);
+  } 
+  
+  pinMode(HALL,INPUT);                //sätter hallsensor som input
   pinMode(Myservo,OUTPUT);            //sätter främre servo motor som output
   pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
   
   FrontStering.attach(Myservo);       //kopplat Dc till pin 9
   motor.attach(Mymotor);             //kopplat främre servo till pin 13
+  Setpoint = 140;     //Börvärde för PIDen
   
+  
+  
+  // KAN BEHÖVAS EN UPPSTARTS SEKVENS FÖR REGULATORERNA
 
 }
 
 void loop() {
+  currenttime=micros();
+  
+  if((currenttime-lastSampletime)>Ts){
+     ReadSpeed();
+  }
+  
+  
+  else if((currenttime-lastPIDtime) > inputintervall){
+     PIDcontroler();
+  }
+  
   
   
 }
 
-void SetSteering(float angle)
-{
+int SensorArray()
+{  
+  val1 = digitalRead(sensor8);
+  val2 = digitalRead(sensor9);
+  val3 = digitalRead(sensor10);
+  val4 = digitalRead(sensor11);
+  val5 = digitalRead(sensor12);
+  val6 = digitalRead(sensor13);
 
+  int sensors[6]={val1, val2, val3, val4, val5, val6};
+}
+void SetSteering(float angle){
 Myservo.write(angle);
-  
 }
 
-void SetSpeed(float mps)
-{
-Mymotor.write(mps);
- 
+void SetSpeed(float mps){
+motor.write(mps);
 }
+
+void PIDcontroler(){          //Euler backward PID assuming constant samplingtime
+    double Sampletime=inputintervall/1000000;  
+    double P=0.00856;
+    double I=0.0856;
+    double D=0;
+
+    integral=integral+(Setpoint-v)*Sampletime; //Updaterar integralen med antagandet att sampletiden är konstant
+    angle=90+P*(Setpoint-v)+integral*I+D*((Setpoint-v-oldError)/Sampletime;        //Beräknar vinkeln, regulatorn går från 90.
+    motor.write(angle);
+    oldError=(Setpoint-v);
+    lastPIDtime=currenttime;                 //lastPIDtime är tiden då vinkeln till motorn senast ändrats
+}
+
+void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if it is bad for other parts of the script
+    state=digitalRead(HALL);              //Reads the hallsignal
+    if (state==LOW && oldstate==HIGH){                        //Cheaks if the magnet is there
+      currenttime=micros();
+      if (currenttime==0){               //kan kanske tas bort nu, bör testas på bilen
+      }
+      else{
+        v=(2*Omkrets*1000000)/((currenttime-lastSampletime)*17.53);    //multiply with e6 to get seconds, 17.53 magnets per wheel rotation men vi tog bort hälften av magneterna
+        lastSampletime=currenttime;    
+        if(v < 0.6*vold){             //För att slippa dipparna som sker en gång per varv av hjulen
+          v=vold;
+        }
+        vold=v;
+      }
+    }
+    oldstate=state;
+ }
