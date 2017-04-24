@@ -24,6 +24,11 @@ double oldError=0;          //Gamla felet i hastighet regulatorn
 long integral =0;
 
 
+// Obsticleavoidance
+int distsensor = 1;
+int avoid=low;
+
+
 //Styrpinnar
 int Myservo = 7;
 int Mymotor = 6;
@@ -39,7 +44,8 @@ void setup()
      pinMode(i,INPUT);
   } 
   
-  pinMode(HALL,INPUT);                //sätter hallsensor som input
+  pinMode(distsensor,INPUT);                //sätter hallsensor som input
+  pinMode(HALL,INPUT); 
   pinMode(Myservo,OUTPUT);            //sätter främre servo motor som output
   pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
   
@@ -55,6 +61,11 @@ void setup()
 
 void loop() {
   currenttime=micros();
+  avoid=digitalRead(distsensor);
+  
+  if(avoid=HIGH){
+      OBsticleavoidance();
+  }
   
   if((currenttime-lastSampletime)>Ts){
      ReadSpeed();
@@ -118,3 +129,13 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     }
     oldstate=state;
  }
+ 
+ 
+ 
+ OBsticleavoidance(){
+ 
+ 
+ 
+ 
+ }
+ 
