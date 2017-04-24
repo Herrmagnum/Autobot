@@ -25,12 +25,20 @@ long integral =0;
 
 
 //Styrpinnar
-int Myservo = 13;
-int Mymotor = 12;
+int Myservo = 7;
+int Mymotor = 6;
+
+//SensorArray
+int sensor8,sensor9,sensor10,sensor11,sensor12,sensor13;
+int val1, val2, val3, val4, val5, val6;
 
 void setup()
 {
- 
+  for(int i=sensor8; i<=sensor13; i++)
+  {
+     pinMode(i,INPUT);
+  } 
+  
   pinMode(HALL,INPUT);                //sätter hallsensor som input
   pinMode(Myservo,OUTPUT);            //sätter främre servo motor som output
   pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
@@ -61,6 +69,17 @@ void loop() {
   
 }
 
+int SensorArray()
+{  
+  val1 = digitalRead(sensor8);
+  val2 = digitalRead(sensor9);
+  val3 = digitalRead(sensor10);
+  val4 = digitalRead(sensor11);
+  val5 = digitalRead(sensor12);
+  val6 = digitalRead(sensor13);
+
+  int sensors[6]={val1, val2, val3, val4, val5, val6};
+}
 void SetSteering(float angle){
 Myservo.write(angle);
 }
