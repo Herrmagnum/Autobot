@@ -1,3 +1,9 @@
+# include <Servo.h>
+Servo FrontServo;
+int ServoPinFront = 2;
+Servo BackServo;
+int ServoPinBack = 3;
+
 //front angle sensor
 int FrontValue1 = 507;
 int FrontValue2 = 511;
@@ -27,27 +33,30 @@ int inputAngle;
 void setup() {
   // declare the ledPin as an OUTPUT:
   Serial.begin(9600);
-  
+  FrontServo.attach(ServoPinFront); 
+  BackServo.attach(ServoPinBack);
+  pinMode(ServoPinFront,OUTPUT);
+  pinMode(ServoPinBack,OUTPUT);
 }
 
 void loop() {
   inputAngle = random(-30,30);
+  FrontServo.write(90+inputAngle);
+  BackServo.write(90-inputAngle);
+  
   time = millis();
-  angleFront = -GetAngle(FrontValue1, FrontValue2, FrontValue3, FrontValue4, FrontValue5, FrontValue6, sensorPinFront);
-  angleBack = -GetAngle(BackValue1, BackValue2, BackValue3, BackValue4, BackValue5, BackValue6, sensorPinBack);
-  Serial.print("front angle: ");
-  Serial.print(angleFront);
-  Serial.print("\t");
-  Serial.print("back angle: ");
-  Serial.print(angleBack);
-  Serial.print("\t");
-  Serial.print("input angle: ");
-  Serial.print(inputAngle);
-  Serial.print("   \t");
-  Serial.print("time: ");
+  angleFront = GetAngle(FrontValue1, FrontValue2, FrontValue3, FrontValue4, FrontValue5, FrontValue6, sensorPinFront);
+  angleBack = GetAngle(BackValue1, BackValue2, BackValue3, BackValue4, BackValue5, BackValue6, sensorPinBack);
+  
+  Serial.print(90+inputAngle); //input angle
+  Serial.print(",");
+  Serial.print(90+angleFront); //angle front
+  Serial.print(",");
+  Serial.print(90-angleBack); //angle back
+  Serial.print(",");
   Serial.print(time/1000);
   Serial.println();
-  //delayMicroseconds(1);
+  delay(2000);
 }
 
 float GetAngle(int Value1, int Value2, int Value3, int Value4, int Value5, int Value6, int sensorPin)
@@ -81,4 +90,3 @@ float GetAngle(int Value1, int Value2, int Value3, int Value4, int Value5, int V
   //angle = sensorValue;
   return angle;
 }
-
