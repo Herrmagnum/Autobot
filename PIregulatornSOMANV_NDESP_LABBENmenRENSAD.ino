@@ -9,7 +9,7 @@ double Omkrets=20.4;                         //Omkrets på hjulet cm
 unsigned long lasttime=0; 
 unsigned long currenttime=0;
 unsigned long lastangletime=0;
-unsigned long inputintervall=220000;      //Microsekunder mellan PID beräkningar
+unsigned long inputintervall=200000;      //Microsekunder mellan PID beräkningar
 
 //regulator 1
 double Sampletime=0.2;
@@ -34,8 +34,7 @@ void setup() {
     Serial.begin(9600); 
     pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
     motor.attach(Mymotor); 
-    passeringar=0;
-    Setpoint = 140;                       // Börvärde till refulatorn
+    Setpoint = 90;                       // Börvärde till refulatorn
     angle=103.7;                 //Uppstart
     motor.write(angle);         //Uppstart
     delay(2000);                //Uppstart
