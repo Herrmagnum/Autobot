@@ -129,18 +129,13 @@ void loop()
      //we're far from setpoint, use aggressive tuning parameters
      myPID.SetTunings(aggKp, aggKi, aggKd);
   }
-  ServoWrite= 88.5-1.242*Output;
-  ServoWrite2= 88.5+1.242*Output;
+  ServoWrite= 91.5-1.242*Output;
+  ServoWrite2= 91.5+1.242*Output;
   myPID.Compute();
   //analogWrite(PIN_OUTPUT, ServoWrite);
   FrontSteering.write(ServoWrite);
   BackSteering.write(ServoWrite2);
-  if(ServoWrite > 90){
-    Dcmotor.write(80);
-  }
-  if(ServoWrite < 80){
-    Dcmotor.write(100);
-  }
+  Dcmotor.write(102.6);
   /*Temporary solution to get sensor updates*/
 //start
   val1 = digitalRead(sensor8);
