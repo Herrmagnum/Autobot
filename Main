@@ -1,6 +1,10 @@
 # include <Servo.h>
-Servo FrontStering;
-Servo motor;
+#include <PID_v1.h>
+#define PIN_OUTPUT 3
+
+Servo FrontSteering;
+Servo BackSteering;
+Servo Dcmotor;
 
 // TIMERS
 unsigned long lastSampletime=0; 
@@ -8,7 +12,6 @@ int Ts= 200;                         //Microsecond between the samplings of velo
 unsigned long currenttime=0;
 unsigned long lastPIDtime=0;
 int inputintervall=220000;           //Microsekunder mellan PID beräkningar
-
 
 //Hastighetsmätningen
 int HALL=2;                               //pin för hall
@@ -23,65 +26,141 @@ double Setpoint;
 double oldError=0;          //Gamla felet i hastighet regulatorn
 long integral =0;
 
-
 // Obsticleavoidance
 int distsensor = 1;
-int avoid=low;
+int avoid=0;
 
+//Define sensor pins//
+const int sensor8 = 13;
+const int sensor9 = 12;
+const int sensor10 = 11;
+const int sensor11 = 10;
+const int sensor12 = 9;
+const int sensor13 = 8;
 
 //Styrpinnar
-int Myservo = 7;
-int Mymotor = 6;
+int MyservoFront = 6;
+int Mymotor = 7;
+int MyservoBack = 5;
+
+//Constants for the car//
+double Ls=0.079 , Lc=0.264 ;
+double SensorDistances[]={0.0818,0.0533,0.0265,-0.0265,-0.0533,-0.0818};
+double Setpoints;
 
 //SensorArray
-int sensor8,sensor9,sensor10,sensor11,sensor12,sensor13;
 int val1, val2, val3, val4, val5, val6;
+int sensors[6];
+int angle;
+
+//////////////////////////////////////////////////////
+double DstoAlpha(int Sensors[])
+//Converts sensorreadings to angle alpha, to send into PID for steering//
+{
+  double count =0;
+  double sumDs =0;
+  double SUMDs =0;
+  double Ds=0;
+ for( int i = 0; i<3; i++)
+{
+  double sumDs = SensorDistances[i]*Sensors[i] + SensorDistances[5-i]*Sensors[5-i];
+  if(sumDs!=0)
+  {
+    count ++;
+  }
+  SUMDs += sumDs;
+}
+if(count!=0) 
+{
+  Ds = SUMDs/count;
+}
+  double Alpha = (180/3.14)*atan(2*Ds*Lc/(Ds*Ds+(Lc+Ls)*(Lc+Ls))); 
+  //Serial.println(Alpha);
+  return Alpha; 
+}
+
+//Define Variables we'll be connecting to
+double  Input, SetpointServo,Output,ServoWrite, ServoWrite2;
+int SampleTime = 50;
+ 
+//Define the aggressive and conservative Tuning Parameters
+double aggKp=1.5, aggKi=0.15, aggKd=0.025;
+double consKp=1.5, consKi=0.15, consKd=0.025;
+
+//Specify the links and initial tuning parameters
+PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
 void setup()
 {
+  //Serial.begin(57600);
   for(int i=sensor8; i<=sensor13; i++)
   {
      pinMode(i,INPUT);
   } 
+  pinMode(distsensor,INPUT);
+  pinMode(HALL,INPUT);
+  pinMode(Mymotor,OUTPUT);
+  pinMode(MyservoFront,OUTPUT);
+  pinMode(MyservoBack,OUTPUT);
   
-  pinMode(distsensor,INPUT);                //sätter hallsensor som input
-  pinMode(HALL,INPUT); 
-  pinMode(Myservo,OUTPUT);            //sätter främre servo motor som output
-  pinMode(Mymotor,OUTPUT);            //sätter dc motor som output
-  
-  FrontStering.attach(Myservo);       //kopplat Dc till pin 9
-  motor.attach(Mymotor);             //kopplat främre servo till pin 13
-  Setpoint = 140;     //Börvärde för PIDen
-  
-  
-  
-  // KAN BEHÖVAS EN UPPSTARTS SEKVENS FÖR REGULATORERNA
+  //initialize the variables we're linked to
+  Input = 90;
+  SetpointServo = 0;   //Börvärde för Piden Servo
+  Setpoint = 140;     //Börvärde för PIDen  dc Motor
 
+  Dcmotor.attach(Mymotor);
+  FrontSteering.attach(MyservoFront);
+  BackSteering.attach(MyservoBack);
+  
+  //turn the PID on
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetSampleTime(SampleTime);
+  myPID.SetOutputLimits(-20,20);
+ 
 }
-
 void loop() {
+
+ /* //Motor PId
   currenttime=micros();
   avoid=digitalRead(distsensor);
   
   if(avoid=HIGH){
       OBsticleavoidance();
   }
-  
   if((currenttime-lastSampletime)>Ts){
      ReadSpeed();
   }
-  
-  
   else if((currenttime-lastPIDtime) > inputintervall){
      PIDcontroler();
   }
-  
-  
-  
-}
+  */
+  // Servo Pid
+  Input = DstoAlpha(sensors);
 
-int SensorArray()
-{  
+  double gap = abs(SetpointServo-Input); //distance away from setpoint
+  if (gap < 30)
+  {  //we're close to setpoint, use conservative tuning parameters
+    myPID.SetTunings(consKp, consKi, consKd);
+  }
+  else
+  {
+     //we're far from setpoint, use aggressive tuning parameters
+     myPID.SetTunings(aggKp, aggKi, aggKd);
+  }
+
+  ServoWrite= 88.5-1.242*Output;
+  //ServoWrite2= 88.5+1.242*Output;
+  myPID.Compute();
+
+  //SetSteering(ServoWrite);
+  //analogWrite(PIN_OUTPUT, ServoWrite);
+  //FrontSteering.write(MyservoFront);
+  //BackSteering.write(MyservoBack);
+  
+  Dcmotor.write(80);
+  FrontSteering.write(ServoWrite);
+  /*Temporary solution to get sensor updates*/
+//start
   val1 = digitalRead(sensor8);
   val2 = digitalRead(sensor9);
   val3 = digitalRead(sensor10);
@@ -89,16 +168,25 @@ int SensorArray()
   val5 = digitalRead(sensor12);
   val6 = digitalRead(sensor13);
 
-  int sensors[6]={val1, val2, val3, val4, val5, val6};
+  /*Updates sensor array*/
+   sensors[0]= val1;
+   sensors[1]= val2;
+   sensors[2]= val3;
+   sensors[3]= val4;
+   sensors[4]= val5;
+   sensors[5]= val6;
+   //end
+  Serial.println(ServoWrite);
 }
-void SetSteering(float angle){
-Myservo.write(angle);
+
+/*void SetSteering(float ServoWrite){
+FrontSteering.write(ServoWrite);
 }
 
 void SetSpeed(float mps){
-motor.write(mps);
-}
-
+Dcmotor.write(mps);
+}*/
+/*
 void PIDcontroler(){          //Euler backward PID assuming constant samplingtime
     double Sampletime=inputintervall/1000000;  
     double P=0.00856;
@@ -106,8 +194,8 @@ void PIDcontroler(){          //Euler backward PID assuming constant samplingtim
     double D=0;
 
     integral=integral+(Setpoint-v)*Sampletime; //Updaterar integralen med antagandet att sampletiden är konstant
-    angle=90+P*(Setpoint-v)+integral*I+D*((Setpoint-v-oldError)/Sampletime;        //Beräknar vinkeln, regulatorn går från 90.
-    motor.write(angle);
+    angle=90+P*(Setpoint-v)+integral*I+D*((Setpoint-v-oldError)/Sampletime);        //Beräknar vinkeln, regulatorn går från 90.
+    Dcmotor.write(angle);
     oldError=(Setpoint-v);
     lastPIDtime=currenttime;                 //lastPIDtime är tiden då vinkeln till motorn senast ändrats
 }
@@ -130,12 +218,10 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     oldstate=state;
  }
  
- 
- 
- OBsticleavoidance(){         //SAfety break for testign
+void OBsticleavoidance(){         //SAfety break for testign
       angle=90;
-      motor.write(angle);
+      Dcmotor.write(angle);
       delay(10000);
       v=0;
  }
- 
+ */
