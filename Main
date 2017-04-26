@@ -132,10 +132,10 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
  
  
  
- OBsticleavoidance(){
- 
- 
- 
- 
+ OBsticleavoidance(){         //SAfety break for testign
+      angle=90;
+      motor.write(angle);
+      delay(10000);
+      v=0;
  }
  
