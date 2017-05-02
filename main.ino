@@ -49,6 +49,8 @@ const int sensor10 = 11;
 const int sensor11 = 10;
 const int sensor12 = 9;
 const int sensor13 = 8;
+const int sensor14 = 7;
+const int sensor15 = 6;
 
 /*Constants for the car*/
 double Ls=0.079 , Lc=0.264 ;
@@ -57,8 +59,8 @@ double SensorDistances[]={0.0818,0.0533,0.0265,-0.0265,-0.0533,-0.0818};
 
 //SensorArray
 //int sensor8,sensor9,sensor10,sensor11,sensor12,sensor13;
-int val1, val2, val3, val4, val5, val6;
-int sensors[6];
+int val1, val2, val3, val4, val5, val6, val7, val8;
+int sensors[8];
 
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output,ServoWrite, ServoWrite2;
@@ -73,11 +75,13 @@ PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
 void setup()
 {
-  for(int i=sensor8; i<=sensor13; i++)
+  for(int i=sensor8; i<=sensor15; i++)
   {
      pinMode(i,INPUT);
   } 
-  
+ 
+  float LastReadings =0;             // inititsiering föregående utslag av sensorarray 
+ 
   pinMode(distsensor,INPUT);                //sätter hallsensor som input
   pinMode(HALL,INPUT); 
   pinMode(Mymotor,OUTPUT);           //sätter dc motor som output
@@ -144,6 +148,8 @@ void SetSteering(){
   val4 = digitalRead(sensor11);
   val5 = digitalRead(sensor12);
   val6 = digitalRead(sensor13);
+  val7 = digitalRead(sensor14);
+  val8 = digitalRead(sensor15);
 
   /*Updates sensor array*/
    sensors[0]= val1;
@@ -152,6 +158,8 @@ void SetSteering(){
    sensors[3]= val4;
    sensors[4]= val5;
    sensors[5]= val6;
+   sensors[6]= val7;
+   sensors[7]= val8;
 }
 
 
@@ -160,7 +168,7 @@ void SetSteering(){
                                             float P=0.00856;
                                             float I=0.0856;
                                             float D=0;
-                                            float angle =90;
+                                           
                                         
                                             integral=integral+(SetSpeed-v)*Sampletime; //Updaterar integralen med antagandet att sampletiden är konstant
                                             angle=90+P*(SetSpeed-v)+integral*I+D*((SetSpeed-v-oldError)/Sampletime);        //Beräknar vinkeln, regulatorn går från 90.
@@ -194,16 +202,17 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
                                             v=0;
                                        }
 
- double DstoAlpha(int Sensors[])
+ float DstoAlpha(int Sensors[])
 /*Converts sensorreadings to angle alpha, to send into PID for steering*/
 {
-  double count =0;
-  double sumDs =0;
-  double SUMDs =0;
-  double Ds=0;
- for( int i = 0; i<3; i++)
+  float count =0;
+  float sumDs =0;
+  float SUMDs =0;
+  float Ds=0;
+
+ for( int i = 0; i<4; i++)
 {
-  double sumDs = SensorDistances[i]*Sensors[i] + SensorDistances[5-i]*Sensors[5-i];
+  float sumDs = SensorDistances[i]*Sensors[i] + SensorDistances[7-i]*Sensors[7-i];
   if(sumDs!=0)
   {
     count ++;
@@ -213,8 +222,13 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
 if(count!=0) 
 {
   Ds = SUMDs/count;
+  LastReadings = Ds;
 }
-  double Alpha = (180/3.14)*atan(2*Ds*Lc/(Ds*Ds+(Lc+Ls)*(Lc+Ls))); 
+else 
+{
+ Ds // JENS DU SKA BÖRJA HÄR
+}
+  float Alpha = (180/3.14)*atan(2*Ds*Lc/(Ds*Ds+(Lc+Ls)*(Lc+Ls))); 
   //Serial.println(Alpha);
  return Alpha; 
 }
