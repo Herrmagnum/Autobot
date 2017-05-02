@@ -17,13 +17,13 @@ int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 int HALL=2;                               //pin för hall
 int state=HIGH;                              //signal från hall
 int oldstate=HIGH;
-double v=0;                               //Hastighet cm/s
-double vold=0;
-double Omkrets=20.4;                         //Omkrets på hjulet 
+float v=0;                               //Hastighet cm/s
+float vold=0;
+float Omkrets=20.4;                         //Omkrets på hjulet 
 
 //CrouseControll Parametrar
-double SetSpeed;
-double oldError=0;          //Gamla felet i hastighet regulatorn
+float SetSpeed;
+float oldError=0;          //Gamla felet i hastighet regulatorn
 long integral =0;
 
 
@@ -83,7 +83,7 @@ void setup()
   pinMode(Mymotor,OUTPUT);           //sätter dc motor som output
 
   motor.attach(Mymotor);             //kopplat främre servo till pin Mymotor
-  SetSpeed = 140;                    //Börvärde för hastigheten
+  SetSpeed = 30;                    //Börvärde för hastigheten
 
   // Styrning
   FrontSteering.attach(servo);
@@ -100,34 +100,23 @@ void setup()
 
 }
 
-void loop() {
-  currenttime=micros();
-  avoid=digitalRead(distsensor);
-  SetSteering();
-//  if(avoid=HIGH){
-//      OBsticleavoidance();
-//  }
-  if((currenttime-lastSampletime)>Ts){
-     ReadSpeed();
+                                          void loop() {
+                                            currenttime=micros();
+                                            avoid=digitalRead(distsensor);
+                                            SetSteering();
+                                          //  if(avoid=HIGH){
+                                          //      OBsticleavoidance();
+                                          //  }
+                                            if((currenttime-lastSampletime)>Ts){
+                                               ReadSpeed();
 
-  }
-  else if((currenttime-lastPIDtime) > inputintervall){
-     PIDcontroler();
-  }
-}
+                                            }
+                                            else if((currenttime-lastPIDtime) > inputintervall){
+                                               SPEEDcontroler();
+                                            }
+                                          }
 
-                                                int SensorArray()
-                                                {  
-                                                  val1 = digitalRead(sensor8);
-                                                  val2 = digitalRead(sensor9);
-                                                  val3 = digitalRead(sensor10);
-                                                  val4 = digitalRead(sensor11);
-                                                  val5 = digitalRead(sensor12);
-                                                  val6 = digitalRead(sensor13);
-                                                
-                                                  int sensors[6]={val1, val2, val3, val4, val5, val6};
-                                                }
-                                                
+
 void SetSteering(){
     Input = DstoAlpha(sensors);
 
@@ -166,11 +155,12 @@ void SetSteering(){
 }
 
 
-                                        void PIDcontroler(){          //Euler backward PID assuming constant samplingtime
-                                            double Sampletime=inputintervall/1000000;  
-                                            double P=0.00856;
-                                            double I=0.0856;
-                                            double D=0;
+                                        void SPEEDcontroler(){          //Euler backward PID assuming constant samplingtime
+                                            float Sampletime=inputintervall/1000000;  
+                                            float P=0.00856;
+                                            float I=0.0856;
+                                            float D=0;
+                                            float angle =90;
                                         
                                             integral=integral+(SetSpeed-v)*Sampletime; //Updaterar integralen med antagandet att sampletiden är konstant
                                             angle=90+P*(SetSpeed-v)+integral*I+D*((SetSpeed-v-oldError)/Sampletime);        //Beräknar vinkeln, regulatorn går från 90.
