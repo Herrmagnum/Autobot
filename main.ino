@@ -19,7 +19,7 @@ int state=HIGH;                              //signal från hall
 int oldstate=HIGH;
 float v=0;                               //Hastighet cm/s
 float vold=0;
-float Omkrets=20.4;                         //Omkrets på hjulet 
+
 
 //CrouseControll Parametrar
 float SetSpeed;
@@ -162,9 +162,9 @@ void SetSteering(){
    sensors[7]= val8;
 }
 
-
+        /* SPEEDcontroller uses the velocity V, Vold and the setpoint SetSpeed to adjust the input signal to the motor */
                                         void SPEEDcontroler(){          //Euler backward PID assuming constant samplingtime
-                                            float Sampletime=inputintervall/1000000;  
+                                            float Sampletime=inputintervall/1000000;     //Converts the sampletime to seconds from microseconds
                                             float P=0.00856;
                                             float I=0.0856;
                                             float D=0;
@@ -176,12 +176,13 @@ void SetSteering(){
                                             oldError=(SetSpeed-v);
                                             lastPIDtime=currenttime;                 //lastPIDtime är tiden då vinkeln till motorn senast ändrats
                                         }
-
+/* ReadSpeed looks at the state of the hall sensor to calculate the velocity v and stors the previus velocity in vold */
 void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if it is bad for other parts of the script
+    float Omkrets=20.4;                   //Omkrets på hjulet 
     state=digitalRead(HALL);              //Reads the hallsignal
-    if (state==LOW && oldstate==HIGH){                        //Cheaks if the magnet is there
+    if (state==LOW && oldstate==HIGH){    //Cheaks if the magnet is there
       currenttime=micros();
-      if (currenttime==0){               //kan kanske tas bort nu, bör testas på bilen
+      if (currenttime==0){                //kan kanske tas bort nu, bör testas på bilen
       }
       else{
         v=(2*Omkrets*1000000)/((currenttime-lastSampletime)*17.53);    //multiply with e6 to get seconds, 17.53 magnets per wheel rotation men vi tog bort hälften av magneterna
