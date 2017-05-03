@@ -9,16 +9,14 @@ float angle =90;
 unsigned long lastSampletime=0; 
 int Ts= 200;                         //Microsecond between the samplings of velocity
 unsigned long currenttime=0;
-unsigned long lastSpeedPIDtime=0;
-unsigned long lasPrinttime=0;
-int printtime=1000000;
+unsigned long lastPIDtime=0;
 int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 
 
 //Hastighetsmätningen
 int HALL=2;                               //pin för hall
-int state;                              //signal från hall
-int oldstate;
+int state=HIGH;                              //signal från hall
+int oldstate=HIGH;
 float v=0;                               //Hastighet cm/s
 float vold=0;
 
@@ -35,14 +33,14 @@ int avoid=LOW;
 
 
 //Styrpinnar
-int Mymotor = 3;
+int Mymotor = 7;
 
 
 #include <PID_v1.h>
 Servo FrontSteering,BackSteering;
 
-double servo = 4;
-double servo2 = 0;
+double servo = 6;
+double servo2 = 5;
 
 /*Define sensor pins*/
 const int sensor8 = 13;
@@ -56,7 +54,7 @@ const int sensor15 = 6;
 
 /*Constants for the car*/
 double Ls=0.079 , Lc=0.264 ;
-double SensorDistances[]={0.0818,0.0533,0.0265,-0.0265,-0.0533,-0.0818};
+double SensorDistances[]={0.099,0.076,0.053,0.030,-0.030,-0.053,-0.076, -0.099};
 
 
 //SensorArray
@@ -70,7 +68,7 @@ float STime = 50;
  
 //Define the aggressive and conservative Tuning Parameters
 double aggKp=1.5, aggKi=0, aggKd=0;
-double consKp=0.389, consKi=1.55, consKd=0.0134;
+double consKp=1.5, consKi=0, consKd=0;
 
 //Specify the links and initial tuning parameters
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
@@ -83,9 +81,6 @@ void setup()
   } 
  
   float LastReadings =0;             // inititsiering föregående utslag av sensorarray 
- 
-   state=digitalRead(HALL);  
-   oldstate=state;
  
   pinMode(distsensor,INPUT);                //sätter hallsensor som input
   pinMode(HALL,INPUT); 
@@ -113,7 +108,6 @@ void setup()
                                             currenttime=micros();
                                             avoid=digitalRead(distsensor);
                                             SetSteering();
-                                            
                                           //  if(avoid=HIGH){
                                           //      OBsticleavoidance();
                                           //  }
@@ -121,11 +115,8 @@ void setup()
                                                ReadSpeed();
 
                                             }
-                                            else if((currenttime-lastSpeedPIDtime) > inputintervall){
+                                            else if((currenttime-lastPIDtime) > inputintervall){
                                                SPEEDcontroler();
-                                            }
-                                            else if((currenrrime-lasPrinttime) > printtime){
-                                              serialPrint()
                                             }
                                           }
 
@@ -191,6 +182,9 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     state=digitalRead(HALL);              //Reads the hallsignal
     if (state==LOW && oldstate==HIGH){    //Cheaks if the magnet is there
       currenttime=micros();
+      if (currenttime==0){                //kan kanske tas bort nu, bör testas på bilen
+      }
+      else{
         v=(2*Omkrets*1000000)/((currenttime-lastSampletime)*17.53);    //multiply with e6 to get seconds, 17.53 magnets per wheel rotation men vi tog bort hälften av magneterna
         lastSampletime=currenttime;    
         if(v < 0.6*vold){             //För att slippa dipparna som sker en gång per varv av hjulen
@@ -198,6 +192,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
         }
         vold=v;
       }
+    }
     oldstate=state;
  }
                                        
@@ -232,33 +227,9 @@ if(count!=0)
 }
 else 
 {
- Ds // JENS DU SKA BÖRJA HÄR
+ Ds = LastReadings;
 }
   float Alpha = (180/3.14)*atan(2*Ds*Lc/(Ds*Ds+(Lc+Ls)*(Lc+Ls))); 
   //Serial.println(Alpha);
  return Alpha; 
 }
-
-
-void serialPrint(){
-  Serial.print(Input);
-  Serial.print(',');
-  Serial.print(Output);
-  Serial.print(',');
-  Serial.print(SetSpeed);
-  Serial.print(',');
-  Serial.print(v);
-  Serial.print('\n');
-}
-
-
-
-
-
-
-
-
-
-
-
-
