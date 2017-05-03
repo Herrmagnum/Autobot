@@ -70,7 +70,7 @@ float STime = 50;
  
 //Define the aggressive and conservative Tuning Parameters
 double aggKp=1.5, aggKi=0, aggKd=0;
-double consKp=1.5, consKi=0, consKd=0;
+double consKp=0.389, consKi=1.55, consKd=0.0134;
 
 //Specify the links and initial tuning parameters
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
