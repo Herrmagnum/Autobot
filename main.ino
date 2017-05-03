@@ -9,7 +9,9 @@ float angle =90;
 unsigned long lastSampletime=0; 
 int Ts= 200;                         //Microsecond between the samplings of velocity
 unsigned long currenttime=0;
-unsigned long lastPIDtime=0;
+unsigned long lastSpeedPIDtime=0;
+unsigned long lasPrinttime=0;
+int printtime=1000000;
 int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 
 
@@ -111,6 +113,7 @@ void setup()
                                             currenttime=micros();
                                             avoid=digitalRead(distsensor);
                                             SetSteering();
+                                            
                                           //  if(avoid=HIGH){
                                           //      OBsticleavoidance();
                                           //  }
@@ -118,8 +121,11 @@ void setup()
                                                ReadSpeed();
 
                                             }
-                                            else if((currenttime-lastPIDtime) > inputintervall){
+                                            else if((currenttime-lastSpeedPIDtime) > inputintervall){
                                                SPEEDcontroler();
+                                            }
+                                            else if((currenrrime-lasPrinttime) > printtime){
+                                              serialPrint()
                                             }
                                           }
 
@@ -232,3 +238,27 @@ else
   //Serial.println(Alpha);
  return Alpha; 
 }
+
+
+void serialPrint(){
+  Serial.print(Input);
+  Serial.print(',');
+  Serial.print(Output);
+  Serial.print(',');
+  Serial.print(SetSpeed);
+  Serial.print(',');
+  Serial.print(v);
+  Serial.print('\n');
+}
+
+
+
+
+
+
+
+
+
+
+
+
