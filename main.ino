@@ -1,7 +1,4 @@
 # include <Servo.h>
-Servo FrontStering;
-Servo motor;
-
 
 float angle =90;
 
@@ -16,7 +13,6 @@ int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 
 
 //Hastighetsmätningen
-int HALL=2;                               //pin för hall
 int state=HIGH;                              //signal från hall
 int oldstate=HIGH;
 float v=0;                               //Hastighet cm/s
@@ -26,24 +22,23 @@ float vold=0;
 //CrouseControll Parametrar
 float SetSpeed;
 float oldError=0;          //Gamla felet i hastighet regulatorn
-long integral =0;
-
+long integral =100;               //ca 10/Ki
+int nomagnet=0;
 
 // Obsticleavoidance
-int distsensor = 1;
 int avoid=LOW;
 
-
-//Styrpinnar
-int Mymotor = 3;
-
-
 #include <PID_v1.h>
-Servo FrontSteering,BackSteering;
+Servo FrontSteering,BackSteering,motor;
 
-double servo = 4;
-double servo2 = 0;
-
+/* Digital pins */
+int HALL=2;                               // pin för hall
+int distsensor = 1;                       // distance sensor circuit connected to this pin 
+// Motorshield
+int Mymotor = 3;                          
+// Servo pins
+int servo = 4;
+int servo2 = 0;
 /*Define sensor pins*/
 const int sensor8 = 13;
 const int sensor9 = 12;
@@ -58,7 +53,6 @@ const int sensor15 = 6;
 double Ls=0.079 , Lc=0.264 ;
 double SensorDistances[]={0.099,0.076,0.053,0.030,-0.030,-0.053,-0.076, -0.099};
 
-
 //SensorArray
 //int sensor8,sensor9,sensor10,sensor11,sensor12,sensor13;
 int val1, val2, val3, val4, val5, val6, val7, val8;
@@ -69,12 +63,12 @@ double Setpoint, Input, Output,ServoWrite, ServoWrite2;
 float STime = 50;
  
 //Define the aggressive and conservative Tuning Parameters
-double consKp=1.5, consKi=0, consKd=0;
-double consKp=0.389, consKi=1.55, consKd=0.0134;
+double aggKp=1.5, aggKi=0, aggKd=0;
+double consKp=0.889, consKi=0, consKd=0.234;
 
 //Specify the links and initial tuning parameters
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
-
+ float LastReadings =0;             // inititsiering föregående utslag av sensorarray 
 void setup()
 {
   for(int i=sensor8; i<=sensor15; i++)
@@ -82,14 +76,14 @@ void setup()
      pinMode(i,INPUT);
   } 
  
-  float LastReadings =0;             // inititsiering föregående utslag av sensorarray 
+ 
  
   pinMode(distsensor,INPUT);                //sätter hallsensor som input
   pinMode(HALL,INPUT); 
   pinMode(Mymotor,OUTPUT);           //sätter dc motor som output
 
   motor.attach(Mymotor);             //kopplat främre servo till pin Mymotor
-  SetSpeed = 30;                    //Börvärde för hastigheten
+  SetSpeed = 90;                    //Börvärde för hastigheten
 
   // Styrning
   FrontSteering.attach(servo);
@@ -100,9 +94,14 @@ void setup()
   myPID.SetMode(AUTOMATIC);
   myPID.SetSampleTime(STime);
   myPID.SetOutputLimits(-20,20);
+  Serial.begin(9600); 
   
   
   // KAN BEHÖVAS EN UPPSTARTS SEKVENS FÖR REGULATORERNA
+
+//  angle=102.6;
+//  motor.write(angle); 
+//  delay(2000);
 
 }
 
@@ -117,11 +116,12 @@ void setup()
                                                ReadSpeed();
 
                                             }
-                                            else if((currenttime-lastSpeedPIDtime) > inputintervall){
+                                             if((currenttime-lastSpeedPIDtime) > inputintervall){
                                                SPEEDcontroler();
                                             }
-                                            else if((currenrrime-lasPrinttime) > printtime){
-                                              serialPrint()
+                                             if((currenttime-lasPrinttime) > printtime){
+                                              serialPrint();
+                                              lasPrinttime=currenttime;
                                              }
                                           }
 
@@ -140,7 +140,7 @@ void SetSteering(){
      myPID.SetTunings(aggKp, aggKi, aggKd);
   }
   ServoWrite= 91.5-1.242*Output;
-  ServoWrite2= 91.5+1.242*Output;
+  ServoWrite2= 91.5+2.2*Output;
   myPID.Compute();
   //analogWrite(PIN_OUTPUT, ServoWrite);
   FrontSteering.write(ServoWrite);
@@ -169,17 +169,21 @@ void SetSteering(){
 
         /* SPEEDcontroller uses the velocity V, Vold and the setpoint SetSpeed to adjust the input signal to the motor */
                                         void SPEEDcontroler(){          //Euler backward PID assuming constant samplingtime
-                                            float Sampletime=inputintervall/1000000;     //Converts the sampletime to seconds from microseconds
+                                            double Smpltime=0.2;     //Converts the sampletime to seconds from microseconds
                                             float P=0.00856;
                                             float I=0.0856;
                                             float D=0;
                                            
-                                        
-                                            integral=integral+(SetSpeed-v)*Sampletime; //Updaterar integralen med antagandet att sampletiden är konstant
-                                            angle=90+P*(SetSpeed-v)+integral*I+D*((SetSpeed-v-oldError)/Sampletime);        //Beräknar vinkeln, regulatorn går från 90.
+                                            
+                                            integral=integral+(SetSpeed-v)*Smpltime; //Updaterar integralen med antagandet att sampletiden är konstant
+                                            angle=90+P*(SetSpeed-v)+integral*I+D*((SetSpeed-v-oldError)/Smpltime);        //Beräknar vinkeln, regulatorn går från 90.
+                                            if (angle<90){
+                                              angle=90;
+                                            }
                                             motor.write(angle);
+                                            //Serial.println(Smpltime);
                                             oldError=(SetSpeed-v);
-                                            lastPIDtime=currenttime;                 //lastPIDtime är tiden då vinkeln till motorn senast ändrats
+                                            lastSpeedPIDtime=currenttime;                 //lastPIDtime är tiden då vinkeln till motorn senast ändrats
                                         }
 /* ReadSpeed looks at the state of the hall sensor to calculate the velocity v and stors the previus velocity in vold */
 void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if it is bad for other parts of the script
@@ -188,6 +192,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     if (state==LOW && oldstate==HIGH){    //Cheaks if the magnet is there
       currenttime=micros();
       if (currenttime==0){                //kan kanske tas bort nu, bör testas på bilen
+        v=0;
       }
       else{
         v=(2*Omkrets*1000000)/((currenttime-lastSampletime)*17.53);    //multiply with e6 to get seconds, 17.53 magnets per wheel rotation men vi tog bort hälften av magneterna
@@ -196,6 +201,13 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
           v=vold;
         }
         vold=v;
+        nomagnet=0;
+      }
+    }
+    else {
+      nomagnet++;
+      if(nomagnet > 2000){
+        v=0;
       }
     }
     oldstate=state;
@@ -242,7 +254,7 @@ else
 
 
 void serialPrint(){
-  Serial.print(Alpha);
+  Serial.print(Input);
   Serial.print(',');
   Serial.print(Output);
   Serial.print(',');
