@@ -9,7 +9,9 @@ float angle =90;
 unsigned long lastSampletime=0; 
 int Ts= 200;                         //Microsecond between the samplings of velocity
 unsigned long currenttime=0;
-unsigned long lastPIDtime=0;
+unsigned long lastSpeedPIDtime=0;
+unsigned long lasPrinttime=0;
+int printtime=1000000;
 int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 
 
@@ -33,14 +35,14 @@ int avoid=LOW;
 
 
 //Styrpinnar
-int Mymotor = 7;
+int Mymotor = 3;
 
 
 #include <PID_v1.h>
 Servo FrontSteering,BackSteering;
 
-double servo = 6;
-double servo2 = 5;
+double servo = 4;
+double servo2 = 0;
 
 /*Define sensor pins*/
 const int sensor8 = 13;
@@ -67,8 +69,8 @@ double Setpoint, Input, Output,ServoWrite, ServoWrite2;
 float STime = 50;
  
 //Define the aggressive and conservative Tuning Parameters
-double aggKp=1.5, aggKi=0, aggKd=0;
 double consKp=1.5, consKi=0, consKd=0;
+double consKp=0.389, consKi=1.55, consKd=0.0134;
 
 //Specify the links and initial tuning parameters
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
@@ -115,9 +117,12 @@ void setup()
                                                ReadSpeed();
 
                                             }
-                                            else if((currenttime-lastPIDtime) > inputintervall){
+                                            else if((currenttime-lastSpeedPIDtime) > inputintervall){
                                                SPEEDcontroler();
                                             }
+                                            else if((currenrrime-lasPrinttime) > printtime){
+                                              serialPrint()
+                                             }
                                           }
 
 
@@ -232,4 +237,17 @@ else
   float Alpha = (180/3.14)*atan(2*Ds*Lc/(Ds*Ds+(Lc+Ls)*(Lc+Ls))); 
   //Serial.println(Alpha);
  return Alpha; 
+}
+
+
+
+void serialPrint(){
+  Serial.print(Alpha);
+  Serial.print(',');
+  Serial.print(Output);
+  Serial.print(',');
+  Serial.print(SetSpeed);
+  Serial.print(',');
+  Serial.print(v);
+  Serial.print('\n');
 }
