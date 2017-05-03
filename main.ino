@@ -15,8 +15,8 @@ int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 
 //Hastighetsmätningen
 int HALL=2;                               //pin för hall
-int state=HIGH;                              //signal från hall
-int oldstate=HIGH;
+int state;                              //signal från hall
+int oldstate;
 float v=0;                               //Hastighet cm/s
 float vold=0;
 
@@ -81,6 +81,9 @@ void setup()
   } 
  
   float LastReadings =0;             // inititsiering föregående utslag av sensorarray 
+ 
+   state=digitalRead(HALL);  
+   oldstate=state;
  
   pinMode(distsensor,INPUT);                //sätter hallsensor som input
   pinMode(HALL,INPUT); 
@@ -182,9 +185,6 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     state=digitalRead(HALL);              //Reads the hallsignal
     if (state==LOW && oldstate==HIGH){    //Cheaks if the magnet is there
       currenttime=micros();
-      if (currenttime==0){                //kan kanske tas bort nu, bör testas på bilen
-      }
-      else{
         v=(2*Omkrets*1000000)/((currenttime-lastSampletime)*17.53);    //multiply with e6 to get seconds, 17.53 magnets per wheel rotation men vi tog bort hälften av magneterna
         lastSampletime=currenttime;    
         if(v < 0.6*vold){             //För att slippa dipparna som sker en gång per varv av hjulen
@@ -192,7 +192,6 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
         }
         vold=v;
       }
-    }
     oldstate=state;
  }
                                        
