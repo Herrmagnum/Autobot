@@ -35,14 +35,14 @@ int avoid=LOW;
 
 
 //Styrpinnar
-int Mymotor = 7;
+int Mymotor = 3;
 
 
 #include <PID_v1.h>
 Servo FrontSteering,BackSteering;
 
-double servo = 6;
-double servo2 = 5;
+double servo = 4;
+double servo2 = 0;
 
 /*Define sensor pins*/
 const int sensor8 = 13;
