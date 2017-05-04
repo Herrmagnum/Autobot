@@ -13,6 +13,7 @@ unsigned long lastSpeedPIDtime=0;
 unsigned long lasPrinttime=0;
 int printtime=1000000;
 int inputintervall=220000;           //Microsekunder mellan PID beräkningar
+int passeringar=0;
 
 
 //Hastighetsmätningen
@@ -205,6 +206,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
         v=0;
       }
       else{
+        passerinar++;
         v=(2*Omkrets*1000000)/((currenttime-lastSampletime)*17.53);    //multiply with e6 to get seconds, 17.53 magnets per wheel rotation men vi tog bort hälften av magneterna
         lastSampletime=currenttime;    
         if(v < 0.6*vold){             //För att slippa dipparna som sker en gång per varv av hjulen
@@ -224,10 +226,27 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
  }
                                        
                                       void OBsticleavoidance(){         //SAfety break for testign
-                                            angle=90;
+                                            R1=12;         //cm/S radius of first and last rutn
+                                            R2=20;         //cm/s radius of middle turn
+                                            S1=R1*3.14/2;  //cm
+                                            S2=R2*3.14;
+                                            magnetsTurn1=S1/2.33;  //2.33 is the distance the car move for each magnet
+                                            magnetsTurn2=S2/2.33;  //2.33 is the distance the car move for each magnet
+                                            angle=103;     //Temporär input under manövern
                                             motor.write(angle);
                                             
                                             v=0;
+                                            
+                                            
+                                            
+                                            
+                                            passeringar=0;
+                                            while(passeringar<magnetsTurn1){
+                                            delaymicros(100);
+                                            Readspeed();
+                                            }
+                                            
+                                            
                                        }
 
  float DstoAlpha(int Sensors[])
