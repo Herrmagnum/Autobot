@@ -69,6 +69,7 @@ double consKp=0.889, consKi=0, consKd=0.234;
 //Specify the links and initial tuning parameters
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
  float LastReadings =0;             // inititsiering föregående utslag av sensorarray 
+ int LostLine = 0; // parameter for controll of steering when car lost the line (0= on target, 1= lost line LEFT, -1= lost line RIGTH)
 void setup()
 {
   for(int i=sensor8; i<=sensor15; i++)
@@ -127,9 +128,11 @@ void setup()
 
 
 void SetSteering(){
+ 
     Input = DstoAlpha(sensors);
 
   double gap = abs(Setpoint-Input); //distance away from setpoint
+ 
   if (gap < 30)
   {  //we're close to setpoint, use conservative tuning parameters
     myPID.SetTunings(consKp, consKi, consKd);
@@ -231,21 +234,36 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
  for( int i = 0; i<4; i++)
 {
   float sumDs = SensorDistances[i]*Sensors[i] + SensorDistances[7-i]*Sensors[7-i];
+  
   if(sumDs!=0)
   {
     count ++;
   }
+  
   SUMDs += sumDs;
 }
+
+  if((LastReadings == SensorDistances[0] && SUMDs == 0)||(LostLine == 1 && SUMDs =! SensorDistances[0]))
+  {
+   LostLine = 1;  // Lost the line and last reading was on the left
+   Return 22;     // Max Angle for turning left?
+  }
+   if((LastReadings == SensorDistances[7] && SUMDs == 0)||(LostLine == -1 && SUMDs =! SensorDistances[7]))
+  {
+   LostLine = -1;  // Lost the line and last reading was on the right
+   Return -22;     // Max Angle for turning right?
+  }
+  else
+  {
+   LostLine = 0;
+  }
+  
 if(count!=0) 
 {
   Ds = SUMDs/count;
   LastReadings = Ds;
 }
-else 
-{
- Ds = LastReadings;
-}
+
   float Alpha = (180/3.14)*atan(2*Ds*Lc/(Ds*Ds+(Lc+Ls)*(Lc+Ls))); 
   //Serial.println(Alpha);
  return Alpha; 
