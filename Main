@@ -226,25 +226,53 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
  }
                                        
                                       void OBsticleavoidance(){         //SAfety break for testign
-                                            R1=12;         //cm/S radius of first and last rutn
-                                            R2=20;         //cm/s radius of middle turn
-                                            S1=R1*3.14/2;  //cm
-                                            S2=R2*3.14;
-                                            magnetsTurn1=S1/2.33;  //2.33 is the distance the car move for each magnet
-                                            magnetsTurn2=S2/2.33;  //2.33 is the distance the car move for each magnet
+                                            SetSpeed=70;
+                                            float R1=12;         //cm/S radius of first and last rutn
+                                            float R2=20;         //cm/s radius of middle turn
+                                            float S1=R1*3.14/2;  //cm
+                                            floatS2=R2*3.14;
+                                            flaot magnetsTurn1=S1/2.33;  //2.33 is the distance the car move for each magnet
+                                            float magnetsTurn2=S2/2.33;  //2.33 is the distance the car move for each magnet
                                             angle=103;     //Temporär input under manövern
                                             motor.write(angle);
                                             
                                             v=0;
-                                            
-                                            
-                                            
-                                            
+                                            /* First Turn */
+                                            float Alpha = (180/3.14)*atan(Lc/R1); 
+                                            ServoWrite= 91.5-1.242*Alpha;
+                                            ServoWrite2= 91.5+2.2*Alpha;
+                                            FrontSteering.write(ServoWrite);
+                                            BackSteering.write(ServoWrite2);
                                             passeringar=0;
                                             while(passeringar<magnetsTurn1){
                                             delaymicros(100);
                                             Readspeed();
                                             }
+                                            
+                                            /* Second turn */
+                                            Alpha = (180/3.14)*atan(Lc/R2); 
+                                            ServoWrite= 91.5-1.242*Alpha;
+                                            ServoWrite2= 91.5+2.2*Alpha;
+                                            FrontSteering.write(ServoWrite);
+                                            BackSteering.write(ServoWrite2);
+                                            passeringar=0;
+                                            while(passeringar<magnetsTurn2){
+                                            delaymicros(100);
+                                            Readspeed();
+                                            }
+                                            
+                                            /* LAST tunrn */
+                                            Alpha = (180/3.14)*atan(Lc/R1); 
+                                            ServoWrite= 91.5-1.242*Alpha;
+                                            ServoWrite2= 91.5+2.2*Alpha;
+                                            FrontSteering.write(ServoWrite);
+                                            BackSteering.write(ServoWrite2);
+                                            passeringar=0;
+                                            while(passeringar<magnetsTurn1){
+                                            delaymicros(100);
+                                            Readspeed();
+                                            }
+                                            
                                             
                                             
                                        }
