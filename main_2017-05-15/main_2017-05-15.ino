@@ -2,7 +2,7 @@
 #include <PID_v1.h>
 Servo FrontSteering,BackSteering,motor;
 
-float angle;
+float angle;      //input to Motor
 
 // TIMERS All in microseconds
 unsigned long lastSampletime=0; 
@@ -10,51 +10,71 @@ int Ts= 200;                         //Microsecond between the samplings of velo
 unsigned long currenttime=0;
 unsigned long lastSpeedPIDtime=0;
 unsigned long lasPrinttime=0;
-int printtime=1000000;
+int printtime=1000000;               //Microseconds
 int inputintervall=220000;           //Microsekunder mellan PID beräkningar
 
 
 //Hastighetsmätningen
-int state=HIGH;                              //signal från hall
-int oldstate=HIGH;
+int state=HIGH;                        //signal från hall
+int oldstate=HIGH;                     // Storing old state to make sure the signal was falling
 float v;                               //Hastighet cm/s
-float vold=0;
-int passeringar=0;
+float vold=0;                          // for a dumb filtering
+int passeringar=0;                     // Used to know how far the car drives during the avoidance 
 float vsum=0;
 
 
-//CrouseControll Parametrar Home made PID
-double SetSpeed;
-int Speed;
-float oldError=0;          //Gamla felet i hastighet regulatorn
-float integral =0;               //ca 10/Ki
-int nomagnet=0;
-float TurningConstant;
+/*CrouseControll Parametrar Home made PID */
+double SetSpeed = 160;           // the setpoint to the Crouse controll, will redice in corners
+float oldError=0;          // Old error of the speed used for the derivative part
+float integral =0;         //ca 10/Ki
+int nomagnet=0;            // samples without seeing a magnet at the hall sensor
+int Speed = 160;                 // Highest velocity the car will aim for
+float TurningConstant= 3.8;     // factor to multiply the turning angle when reducing the set speed
+//SetSpeed=110;
+//  Speed = 180;
+//  TurningConstant = 5.5;
+//  Speed = 160;
+//  TurningConstant = 3.8;
 
-
-// PID LIBRARY CROUSECONTROLL PARAMETERS
+/* PID LIBRARY CROUSECONTROLL PARAMETERS */ 
 // double P=0.00856;
 //  double I=0.0856;
 //  double D=0;
-
-   double P=0.04;
+/* OBS!! P, I, D is used both in the homemade and the library PID */ 
+  double P=0.04;
   double I=0.08;
   double D=0.001;
  double Speedinput, speedOutput;
 PID speedpid(&Speedinput, &speedOutput, &SetSpeed, P, I, D, DIRECT);
+                        /* End of crouse controller parameters */
 
+                        /* Steering Controller*/
+double Setpoint, Input, Output,ServoWrite, ServoWrite2;
+float STime = 50;    // Sampletime 
 
-// Obsticleavoidance
-int avoid=LOW;
+//Define the aggressive and conservative Tuning Parameters
+//double aggKp=0.889, aggKi=0, aggKd=0.234;
+//double consKp=0.4, consKi=2.4, consKd=20;
+double aggKp=0.889, aggKi=0, aggKd=0.234;
+double consKp=0.4, consKi=2.4, consKd=20;
 
+//Specify the links and initial tuning parameters
+PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
+                     /*End of steering controller*/
+
+        /* Obsticleavoidance */ 
+int avoid=LOW;       // reading from the hall sensor
+int magnetsTurn1=12;  //2.33 is the distance the car move for each magnet
+int magnetsTurn2=15;  //2.33 is the distance the car move for each magnet
+int magnetsTurn3=24;
+float ObsticleSpeed=50;      //cm/s to drive when avoiding the obsticle
 
                   /* DIGITAL PINS */ 
 int HALL=2;                               //pin för hall
-int distsensor = 1;
+int distsensor = 1;                       // distance sensor cercuite will send a high singal if something is to close
 int Mymotor = 3;
 int servo = 4;
 int servo2 = 0;
-
 /*Define sensor pins*/
 const int sensor8 = 13;
 const int sensor9 = 12;
@@ -70,24 +90,11 @@ const int sensor15 = 6;
 double Ls=0.079 , Lc=0.264;
 double SensorDistances[]={0.099,0.076,0.053,0.030,-0.030,-0.053,-0.076, -0.099};
 
-
 //SensorArray
 //int sensor8,sensor9,sensor10,sensor11,sensor12,sensor13;
 int val1, val2, val3, val4, val5, val6, val7, val8;
 int sensors[8];
 
-//Define Variables we'll be connecting to
-double Setpoint, Input, Output,ServoWrite, ServoWrite2;
-float STime = 50;
-
-//Define the aggressive and conservative Tuning Parameters
-//double aggKp=0.889, aggKi=0, aggKd=0.234;
-//double consKp=0.4, consKi=2.4, consKd=20;
-double aggKp=0.889, aggKi=0, aggKd=0.234;
-double consKp=0.4, consKi=2.4, consKd=20;
-
-//Specify the links and initial tuning parameters
-PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
  double LastReadings =0;             // inititsiering föregående utslag av sensorarray 
  int LostLine = 0; // parameter for controll of steering when car lost the line (0= on target, 1= lost line LEFT, -1= lost line RIGTH)
@@ -106,12 +113,6 @@ void setup()
   pinMode(Mymotor,OUTPUT);           //sätter dc motor som output
 
   motor.attach(Mymotor);             //kopplat främre servo till pin Mymotor
-  //SetSpeed=110;
-//  Speed = 180;
-//  TurningConstant = 5.5;
-  Speed = 160;
-  TurningConstant = 3.8;
-  v=0;
   
 
   // Styrning
@@ -220,7 +221,6 @@ void SetSteering(){
                                                 v=0;
                                               }
                                            
-                                            
                                             integral=integral+(SetSpeed-v)*Smpltime; //Updaterar integralen med antagandet att sampletiden är konstant
                                             angle=90+P*(SetSpeed-v)+integral*I+D*((SetSpeed-v-oldError)/Smpltime);        //Beräknar vinkeln, regulatorn går från 90.
                                             if (angle<90){
@@ -258,7 +258,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     }
     else {
       nomagnet++;
-      if(nomagnet > 2000){
+      if(nomagnet > 2000){                //This wil set the speed to 0 if no magnet is seen for more then 2000 samples
         v=0;
       }
     }
@@ -266,24 +266,15 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
  }
                                        
                                       void OBsticleavoidance(){         //SAfety break for testign
-//                                            angle=90;
-//                                            motor.write(angle);
-//                                            delay(10);
-//                                            v=0;
 
-                                            SetSpeed=50;
+                                            SetSpeed=ObsticleSpeed;
                                             float R1=1;         // meter
                                             float R2=1;         // meter
                                             float S1=100*R1*3.14/4;  //cm
                                             float S2=100*R2*3.14/2;
-                                            float magnetsTurn1=12;  //2.33 is the distance the car move for each magnet
-                                            float magnetsTurn2=15;  //2.33 is the distance the car move for each magnet
-//                                            angle=103;     //Temporär input under manövern
-//                                            motor.write(angle);
-                                            int passeringInput = 0;
                                             
-                                            v=0;
                                             /* First Turn */
+                                            int passeringInput = 0;
                                             float Alpha = (180/3.14)*atan(Lc/R1); 
                                             ServoWrite= 91-1.242*Alpha;
                                             ServoWrite2= 91+2.2*Alpha;
@@ -328,7 +319,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
                                             FrontSteering.write(ServoWrite);
                                             BackSteering.write(ServoWrite2);
                                             passeringar=0;
-                                            while(passeringar<24){
+                                            while(passeringar<magnetsTurn3){
                                             delayMicroseconds(100);
                                             ReadSpeed();
                                             passeringInput++;
