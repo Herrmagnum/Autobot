@@ -215,7 +215,7 @@ void SetSteering(){
                                             float D=0;
 
                                               if(passeringar>0){
-                                                v=vsum/passeringar;
+                                                //v=vsum/passeringar;
                                               }
                                               else {
                                                 v=0;
@@ -258,7 +258,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
     }
     else {
       nomagnet++;
-      if(nomagnet > 2000){                //This wil set the speed to 0 if no magnet is seen for more then 2000 samples
+      if(nomagnet > 2000){                //This will set the speed to 0 if no magnet is seen for more then 2000 samples
         v=0;
       }
     }
@@ -273,7 +273,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
                                             float S1=100*R1*3.14/4;  //cm
                                             float S2=100*R2*3.14/2;
                                             
-                                            /* First Turn */
+                                            /* First Turn, drives a speciffic distance while turning rigth */
                                             int passeringInput = 0;
                                             float Alpha = (180/3.14)*atan(Lc/R1); 
                                             ServoWrite= 91-1.242*Alpha;
@@ -293,7 +293,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
                                               }
                                             }
                                             
-                                            /* Second turn */
+                                            /* Second turn drives straigth for a speciffic distance*/
                                             Alpha = (180/3.14)*atan(Lc/R2); 
                                             ServoWrite= 91;
                                             ServoWrite2= 91;
@@ -312,7 +312,7 @@ void ReadSpeed(){    //Could be adjusted to use interupt instead but not sure if
                                               }
                                             }
                                             
-                                            /* LAST tunrn */
+                                            /* LAST tunrn left turn */
                                             Alpha = (180/3.14)*atan(Lc/R1); 
                                             ServoWrite= 91+1.242*Alpha;
                                             ServoWrite2= 91-2.2*Alpha;
