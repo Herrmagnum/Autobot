@@ -67,7 +67,9 @@ int avoid=LOW;       // reading from the hall sensor
 int magnetsTurn1=12;  //2.33 is the distance the car move for each magnet
 int magnetsTurn2=15;  //2.33 is the distance the car move for each magnet
 int magnetsTurn3=24;
-float ObsticleSpeed=50;      //cm/s to drive when avoiding the obsticle
+float ObsticleSpeed=50;       //cm/s to drive when avoiding the obsticle
+int EstTimeLap=5000000;       // Microseconds that the avoidance is turned off. 
+int LastTimeAvoiding=EstTimeLap;    //To have the avoidance manouver enebled in the begining
 
                   /* DIGITAL PINS */ 
 int HALL=2;                               //pin för hall
@@ -144,9 +146,12 @@ integral=0;
                                             SetSteering();
                                              speedpid.Compute();
                                               motor.write(speedOutput);
-                                            avoid=digitalRead(distsensor);
-                                            if(avoid==HIGH){
-                                                //OBsticleavoidance();
+                                            if((currenttime-LastTimeAvoiding)>EstTimeLap){
+                                              avoid=digitalRead(distsensor);
+                                              if(avoid==HIGH){
+                                                  //OBsticleavoidance();
+                                                LastTimeAvoiding=currenttime;
+                                              }
                                             }
                                             if((currenttime-lastSampletime)>Ts){
                                                ReadSpeed();
